@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import "./Admin.css";
-import { FaEye, FaCheckCircle, FaTimesCircle, FaTrash, FaSearch } from "react-icons/fa";
+import { FaEye, FaCheckCircle, FaTimesCircle, FaTrash, FaSearch, FaPlusCircle } from "react-icons/fa";  // Plus button for creating new users
 
 const UserManagement = () => {
     const [users, setUsers] = useState([
@@ -10,30 +10,70 @@ const UserManagement = () => {
         { id: 4, name: "Shop Owner D", email: "shopD@gmail.com", phone: "08133768472", role: "Shop Owner", department: "Orthopedic", verified: false },
     ]);
 
+    const [showCreateForm, setShowCreateForm] = useState(false);
+    const [newUser, setNewUser] = useState({
+        name: "",
+        email: "",
+        phone: "",
+        role: "Cyclist",
+        department: "Radiology",
+        verified: false,
+    });
+
+    // Filter states
     const [searchTerm, setSearchTerm] = useState("");
     const [filterRole, setFilterRole] = useState("All");
+    const [filterVerified, setFilterVerified] = useState("All");
 
-    // Xác minh user
-    const handleVerify = (id) => {
-        setUsers(users.map(user => user.id === id ? { ...user, verified: true } : user));
+    const handleCreateNewUser = () => {
+        setShowCreateForm(true);
     };
 
-    // Xoá user
-    const handleSuspend = (id) => {
-        setUsers(users.filter(user => user.id !== id));
+    const handleCloseForm = () => {
+        setShowCreateForm(false);
     };
 
-    // Xem chi tiết user
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setNewUser({ ...newUser, [name]: value });
+    };
+
+    const handleCreateUser = (e) => {
+        e.preventDefault(); // Prevent default form submission
+        const newId = users.length + 1; // Simple way to generate new ID
+        setUsers([...users, { ...newUser, id: newId }]);
+        setShowCreateForm(false); // Close the modal after adding the user
+        setNewUser({ name: "", email: "", phone: "", role: "Cyclist", department: "Radiology", verified: false }); // Reset form
+    };
+
     const handleViewDetails = (user) => {
         alert(`User Details:\nName: ${user.name}\nEmail: ${user.email}\nPhone: ${user.phone}\nRole: ${user.role}\nDepartment: ${user.department}`);
     };
 
-    // Lọc user dựa trên search và role
+    const handleVerify = (id) => {
+        setUsers(users.map(user => user.id === id ? { ...user, verified: true } : user));
+    };
+
+    const handleSuspend = (id) => {
+        setUsers(users.filter(user => user.id !== id));
+    };
+
+    // Filter users based on search and selected filters
     const filteredUsers = users.filter(user => {
-        return (
-            user.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-            (filterRole === "All" || user.role === filterRole)
-        );
+        const matchesSearch =
+            user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            user.phone.includes(searchTerm);
+
+        const matchesRole =
+            filterRole === "All" || user.role === filterRole;
+
+        const matchesVerified =
+            filterVerified === "All" ||
+            (filterVerified === "Verified" && user.verified) ||
+            (filterVerified === "Not Verified" && !user.verified);
+
+        return matchesSearch && matchesRole && matchesVerified;
     });
 
     return (
@@ -41,25 +81,37 @@ const UserManagement = () => {
             <h1>User & Shop Management</h1>
             <p>Manage user profiles and shop authenticity.</p>
 
-            {/* Search & Filter */}
+            {/* Search and Filter Controls */}
             <div className="admin-controls">
                 <div className="search-box">
                     <FaSearch className="search-icon" />
                     <input
                         type="text"
-                        placeholder="Search by name..."
+                        placeholder="Search by name, email or phone..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
+
                 <select className="role-filter" value={filterRole} onChange={(e) => setFilterRole(e.target.value)}>
                     <option value="All">All Roles</option>
                     <option value="Cyclist">Cyclist</option>
                     <option value="Shop Owner">Shop Owner</option>
+                    <option value="Admin">Admin</option>
                 </select>
+
+                <select className="verified-filter" value={filterVerified} onChange={(e) => setFilterVerified(e.target.value)}>
+                    <option value="All">All Users</option>
+                    <option value="Verified">Verified</option>
+                    <option value="Not Verified">Not Verified</option>
+                </select>
+
+                <button className="create-user-btn" onClick={handleCreateNewUser}>
+                    <FaPlusCircle /> Create New User
+                </button>
             </div>
 
-            {/* Table */}
+            {/* User List Table */}
             <div className="admin-table">
                 <table>
                     <thead>
@@ -112,6 +164,66 @@ const UserManagement = () => {
                     </tbody>
                 </table>
             </div>
+
+            {/* Create New User Form Modal */}
+            {showCreateForm && (
+                <div className="modal-overlay">
+                    <div className="create-user-form">
+                        <h2>Create New User</h2>
+                        <form onSubmit={handleCreateUser}>
+                            <label>Name</label>
+                            <input
+                                type="text"
+                                name="name"
+                                placeholder="Enter name"
+                                value={newUser.name}
+                                onChange={handleInputChange}
+                            />
+
+                            <label>Email</label>
+                            <input
+                                type="email"
+                                name="email"
+                                placeholder="Enter email"
+                                value={newUser.email}
+                                onChange={handleInputChange}
+                            />
+
+                            <label>Phone</label>
+                            <input
+                                type="tel"
+                                name="phone"
+                                placeholder="Enter phone"
+                                value={newUser.phone}
+                                onChange={handleInputChange}
+                            />
+
+                            <label>Role</label>
+                            <select
+                                name="role"
+                                value={newUser.role}
+                                onChange={handleInputChange}
+                            >
+                                <option value="Cyclist">Cyclist</option>
+                                <option value="Shop Owner">Shop Owner</option>
+                                <option value="Admin">Admin</option>
+                            </select>
+
+                            <label>Department</label>
+                            <input
+                                type="text"
+                                name="department"
+                                placeholder="Enter department"
+                                value={newUser.department}
+                                onChange={handleInputChange}
+                            />
+
+                            <button type="submit">Create User</button>
+                            <button type="button" onClick={handleCloseForm}>Cancel</button>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
